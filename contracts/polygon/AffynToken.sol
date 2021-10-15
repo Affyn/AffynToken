@@ -25,35 +25,3 @@ contract AffynToken is Context, ERC20, ERC20Detailed {
         _mint(_msgSender(), initialSupply * (10 ** uint256(decimals())));
     }
 }
-
-
-
-// SPDX-License-Identifier: MIT
-
-// pragma solidity ^0.8.6;
-
-// import "./IERC20.sol" // import IERC20.sol from openzeppelin library
-// contract StoreContract 
-// {
-//     IERC20 public usdt;
-//     constructor (address _usdtAddress) 
-//     {
-//         usdt = IERC20(_usdtAddress);
-//     }
-
-//     receive() external
-//     {
-
-//     }
-
-//     function deposit() external
-//     {
-
-//     }
-
-//     function withdraw() external
-//     {
-//         usdt.transfer(address(this),msg.sender, amount);
-//     }
-
-// }
