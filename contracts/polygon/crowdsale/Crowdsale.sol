@@ -30,10 +30,6 @@ contract Crowdsale is Context, ReentrancyGuard {
 
     // Address where funds are collected
     address payable private _wallet;
-    uint256 private usdtBalance;
-
-    //USDT token address
-    ERC20 usdt = ERC20(0x4366DEaE4996FB867Eb2edE93AC46348dB07723a);
 
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.

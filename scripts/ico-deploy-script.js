@@ -26,8 +26,10 @@ async function main() {
   var openingTime = Math.round(Date.now()/1000) + 60; //In 1 minute
   var closingTime = openingTime + 3600; //In an hour
 
+  var multiSigAddress = '';
+  
   const icoSale = await IcoSale.deploy(affynToken.address, '2200000000000000000000000', '500000000000000000000000', openingTime, closingTime, 
-  '0xDB580ea4595Efb66507926cAcb09f9a80F0A5148', '1',  '3600', '604800', '86400');
+  multiSigAddress, '1',  '3600', '604800', '86400');
 
   await icoSale.deployed();
   console.log("\nicoSale deployed to:", icoSale.address);
