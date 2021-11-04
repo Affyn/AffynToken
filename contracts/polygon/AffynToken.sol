@@ -16,11 +16,12 @@ contract AffynToken is Context, ERC20, ERC20Detailed {
     /**
      * @dev Constructor that gives _msgSender() all of existing tokens.
      */
-    constructor (
-        string memory name,
-        string memory symbol,
-        uint256 initialSupply
-        ) 
+
+    string name = "Affyn";
+    string symbol = "FYN";
+    uint256 initialSupply = 1000000000;
+
+    constructor () 
         public ERC20Detailed(name, symbol, 18) {
         _mint(_msgSender(), initialSupply * (10 ** uint256(decimals())));
     }

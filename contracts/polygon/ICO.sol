@@ -42,7 +42,9 @@ contract TSTokenPrivateSale is
     mapping(address => User) public tree;
     mapping(address => bool) private _firstWithdraw;
     
-    
+    event SetNewCapValue(address indexed userAddress, uint256 newAmount);
+    event WhitelistedListAdded(address[] indexed account);
+
     AffynToken _token; 
         
     uint256 private _individualDefaultCap;
@@ -104,7 +106,7 @@ contract TSTokenPrivateSale is
      * @param newTime new time for the cliff
      * @param beneficiaries that is affected
      */
-    function changeCliffWalletWithdrawTimeList(uint256 newTime, address[] memory beneficiaries) public onlyOwner {
+    function changeCliffWalletWithdrawTimeList(uint256 newTime, address[] calldata beneficiaries) external onlyOwner {
         for (uint256 index = 0; index < beneficiaries.length; index++) 
         {
             _vault[beneficiaries[index]].extendCliffDuration(newTime);
@@ -116,7 +118,7 @@ contract TSTokenPrivateSale is
      * @param newTime new time for the cliff
      * @param beneficiaries that is affected
      */
-    function changeCliffWalletEndTimeList(uint256 newTime, address[] memory beneficiaries) public onlyOwner {
+    function changeCliffWalletEndTimeList(uint256 newTime, address[] calldata beneficiaries) external onlyOwner {
         for (uint256 index = 0; index < beneficiaries.length; index++) 
         {
             _vault[beneficiaries[index]].extendVestDuration(newTime);
@@ -130,6 +132,7 @@ contract TSTokenPrivateSale is
      */
     function setCap(address beneficiary, uint256 cap) external onlyCapper {
         _caps[beneficiary] = cap;
+        emit SetNewCapValue(address(beneficiary), cap);
     }
 
     /**
@@ -202,12 +205,13 @@ contract TSTokenPrivateSale is
      * @dev Extended version of adding Whitelisted
      * @param accounts the addresses you wish to whitelist
     */
-    function addWhitelistedList(address[] memory accounts) public onlyWhitelistAdmin
+    function addWhitelistedList(address[] calldata accounts) external onlyWhitelistAdmin
     {
         for (uint256 account = 0; account < accounts.length; account++) 
         {
             addWhitelisted(accounts[account]);
         }
+        //emit WhitelistedListAdded(address[] accounts);
     }
     
     /**
@@ -224,7 +228,7 @@ contract TSTokenPrivateSale is
                 {
                     _vault[tree[beneficiary].inviter] = new TokenVesting(tree[beneficiary].inviter, _closingTime + _lockedAfterFirstWithdraw, _cliffDuration, _vestDuration, false);
                 }
-                uint256 commisionReward = (tokenAmount / 10000) * (10 * 100); //Get 10% of tokenAmount
+                uint256 commisionReward = (tokenAmount / 10); //Get 10% of tokenAmount
                 _balances[tree[beneficiary].inviter] = _balances[tree[beneficiary].inviter].add(commisionReward);
                 _commisions[tree[beneficiary].inviter] = _commisions[tree[beneficiary].inviter].add(commisionReward);
                 _deliverTokens(address(_vault[tree[beneficiary].inviter]), commisionReward);
@@ -234,27 +238,26 @@ contract TSTokenPrivateSale is
     
     /**
      * @dev Withdraw tokens only after crowdsale ends.
-     * @param beneficiary Whose tokens will be withdrawn.
      */
-    function withdrawTokens(address beneficiary) public {
+    function withdrawTokens() public {
         require(hasClosed(), "PostDeliveryCrowdsale: not closed");
-        uint256 amount = _balances[beneficiary];
+        uint256 amount = _balances[msg.sender];
         require(amount > 0, "PostDeliveryCrowdsale: beneficiary is not due any tokens");
 
-        if (_firstWithdraw[beneficiary] == false)
+        if (_firstWithdraw[msg.sender] == false)
         {
-            if (amount != _commisions[beneficiary]) //if beneficiary only earned from commisions and did not purchase token, ignore withdrawing from 10% wallet
+            if (amount != _commisions[msg.sender]) //if beneficiary only earned from commisions and did not purchase token, ignore withdrawing from 10% wallet
             {
-                uint256 firstWithdrawAmount = (((amount - _commisions[beneficiary]) / 10000) * (10 * 100));
+                uint256 firstWithdrawAmount = (amount - _commisions[msg.sender]) / 10;
                 //Withdraw from 10% wallet
-                _balances[beneficiary] -= firstWithdrawAmount;
-                _firstVault[beneficiary].transfer(token(), beneficiary, firstWithdrawAmount);
-                _firstWithdraw[beneficiary] = true;
+                _balances[msg.sender] -= firstWithdrawAmount;
+                _firstVault[msg.sender].transfer(token(), msg.sender, firstWithdrawAmount);
+                _firstWithdraw[msg.sender] = true;
             }
         }
 
-        _balances[beneficiary] -= _vault[beneficiary]._releasableAmount(token());
-        _vault[beneficiary].release(token());
+        _balances[msg.sender] -= _vault[msg.sender]._releasableAmount(token());
+        _vault[msg.sender].release(token());
 
     }
     
@@ -332,8 +335,8 @@ contract TSTokenPrivateSale is
         
         _firstWithdraw[beneficiary] = false;
         _balances[beneficiary] = _balances[beneficiary].add(tokenAmount);
-        _deliverTokens(address(_vault[beneficiary]), tokenAmount - ((tokenAmount / 10000) * (10 * 100))); //Deliver 90% to cliff wallet
-        _deliverTokens(address(_firstVault[beneficiary]), ((tokenAmount / 10000) * (10 * 100))); //Deliver 10% to first withdraw wallet
+        _deliverTokens(address(_vault[beneficiary]), tokenAmount - (tokenAmount / 10)); //Deliver 90% to cliff wallet
+        _deliverTokens(address(_firstVault[beneficiary]), (tokenAmount / 10)); //Deliver 10% to first withdraw wallet
         _processCommision(tokenAmount, beneficiary);
     }
     

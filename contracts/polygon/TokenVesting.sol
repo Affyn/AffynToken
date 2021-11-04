@@ -23,6 +23,8 @@ contract TokenVesting is Ownable {
 
     event TokensReleased(address token, uint256 amount);
     event TokenVestingRevoked(address token);
+    event VestDurationExtended(uint256 newTime);
+    event CliffDurationExtended(uint256 newTime);
 
     // beneficiary of tokens after they are released
     address private _beneficiary;
@@ -155,6 +157,7 @@ contract TokenVesting is Ownable {
         require(newEndTime > 0, "TokenVesting: duration is 0");
         require(_start.add(newEndTime) > block.timestamp, "TokenVesting: final time is before current time");
         _duration = newEndTime;
+        emit VestDurationExtended(newEndTime);
     }
     
     /**
@@ -165,6 +168,7 @@ contract TokenVesting is Ownable {
         uint256 cliffDuration = _cliff - _start;
         _cliff = newStartTime.add(cliffDuration);
         _start = newStartTime;
+        emit CliffDurationExtended(newStartTime);
     }
     
     /**
