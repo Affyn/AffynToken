@@ -15,6 +15,7 @@ import "./ownership/Ownable.sol";
 import "./utils/ReentrancyGuard.sol";
 import "./TokenVesting.sol";
 
+import "./token/ERC20/IERC20.sol";
 
 contract TSTokenPrivateSale is
     Crowdsale,
@@ -59,28 +60,42 @@ contract TSTokenPrivateSale is
     uint256 private _vestDuration;
     uint256 private _lockedAfterFirstWithdraw;
     
-    constructor(
-        AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime, 
-        address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
-        
+
+    // constructor(
+    //     AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime, 
+    //     address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
+    
+    AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
+    uint256 __totalSaleCap = 2000000000000000000000000;
+    uint256 __individualPurchaseCap = 50000000000000000000000;
+    uint256 __openingTime  = now;
+    uint256 __closingTime  = __openingTime + 1 hours;
+    address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
+    uint256 __rate = 20;
+    uint256 __cliffDuration = 30 minutes;
+    uint256 __vestDuration = 2 hours;
+    uint256 __startCliffAfterFirstWithdrawTime = 10 minutes;
+
+    constructor()    
+
         public
         WhitelistCrowdsale()
         PausableCrowdsale()
-        CappedCrowdsale(totalSaleCap)
-        TimedCrowdsale(openingTime, closingTime)
-        Crowdsale(rate, walletAddress, tokenAddress)
+        CappedCrowdsale(__totalSaleCap)
+        TimedCrowdsale(__openingTime, __closingTime)
+        Crowdsale(__rate, walletAddress, tokenAddress)
     {
         tree[msg.sender] = User(msg.sender, msg.sender);
         _token = AffynToken(tokenAddress);
-        _totalCap = totalSaleCap;
-        _individualDefaultCap = individualPurchaseCap;
-        _openingTime = openingTime;
-        _closingTime = closingTime;
+        _totalCap = __totalSaleCap;
+        _individualDefaultCap = __individualPurchaseCap;
+        _openingTime = __openingTime;
+        _closingTime = __closingTime;
         _wallet = walletAddress;
-        _rate = rate;
-        _cliffDuration = cliffDuration;
-        _vestDuration = vestDuration;
-        _lockedAfterFirstWithdraw = startCliffAfterFirstWithdrawTime;
+        _rate = __rate;
+        _cliffDuration = __cliffDuration;
+        _vestDuration = __vestDuration;
+        _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
     }
     
      /**
@@ -345,11 +360,35 @@ contract TSTokenPrivateSale is
      * @param beneficiary the address in question
      * @param referee refferal address
     */
-    function buyTokensWithReferee(address beneficiary, address referee) public nonReentrant payable {
+    function buyTokensWithReferee(address beneficiary, address referee, uint256 amount) public {
         require(tree[beneficiary].inviter == address(0), "Sender can't already exist in tree");
         require(referee != beneficiary, "Referee cannot be yourself");
         
-        buyTokens(beneficiary);
+        buyTokens(beneficiary, amount);
         tree[beneficiary] = User(referee, beneficiary);        
     }
+
+    // function usdtBuyTokensTest(address beneficiary, uint256 amount) public nonReentrant {
+    //     uint256 weiAmount = amount;
+    //     _preValidatePurchase(beneficiary, weiAmount);
+
+    //     // calculate token amount to be created
+    //     uint256 tokens = _getTokenAmount(weiAmount);
+
+    //     // update state
+    //     _weiRaised = _weiRaised.add(weiAmount);
+
+    //     _processPurchase(beneficiary, tokens);
+    //     emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
+
+    //     _updatePurchasingState(beneficiary, weiAmount);
+
+    //     _forwardFundsUSDT(amount);
+    //     _postValidatePurchase(beneficiary, weiAmount);
+    // }
+
+    // function _forwardFundsUSDT(uint256 amount) internal {
+    //     // Transfer amount USDT tokens from msg.sender to contract
+    //     usdt.transferFrom(_msgSender(), _wallet, amount);
+    // }
 }

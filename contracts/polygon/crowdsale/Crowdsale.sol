@@ -31,6 +31,8 @@ contract Crowdsale is Context, ReentrancyGuard {
     // Address where funds are collected
     address payable private _wallet;
 
+    IERC20 usdt = IERC20(0xbAD0F9677F2137eb4EDDc4309606526A000037c8);
+
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.
     // So, if you are using a rate of 1 with a ERC20Detailed token with 3 decimals called TOK
@@ -38,7 +40,7 @@ contract Crowdsale is Context, ReentrancyGuard {
     uint256 private _rate;
 
     // Amount of wei raised
-    uint256 private _weiRaised;
+    uint256 internal _weiRaised;
 
     /**
      * Event for token purchase logging
@@ -74,7 +76,7 @@ contract Crowdsale is Context, ReentrancyGuard {
      * buyTokens directly when purchasing tokens from a contract.
      */
     function () external payable {
-        buyTokens(_msgSender());
+        //buyTokens(_msgSender());
     }
 
     /**
@@ -105,14 +107,39 @@ contract Crowdsale is Context, ReentrancyGuard {
         return _weiRaised;
     }
 
-    /**
+    // /**
+    //  * @dev low level token purchase ***DO NOT OVERRIDE***
+    //  * This function has a non-reentrancy guard, so it shouldn't be called by
+    //  * another `nonReentrant` function.
+    //  * @param beneficiary Recipient of the token purchase
+    //  */
+    // function buyTokens(address beneficiary) public nonReentrant payable {
+    //     uint256 weiAmount = msg.value;
+    //     _preValidatePurchase(beneficiary, weiAmount);
+
+    //     // calculate token amount to be created
+    //     uint256 tokens = _getTokenAmount(weiAmount);
+
+    //     // update state
+    //     _weiRaised = _weiRaised.add(weiAmount);
+
+    //     _processPurchase(beneficiary, tokens);
+    //     emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
+
+    //     _updatePurchasingState(beneficiary, weiAmount);
+
+    //     _forwardFunds();
+    //     _postValidatePurchase(beneficiary, weiAmount);
+    // }
+
+        /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
      * @param beneficiary Recipient of the token purchase
      */
-    function buyTokens(address beneficiary) public nonReentrant payable {
-        uint256 weiAmount = msg.value;
+    function buyTokens(address beneficiary, uint256 amount) public nonReentrant {
+        uint256 weiAmount = amount;
         _preValidatePurchase(beneficiary, weiAmount);
 
         // calculate token amount to be created
@@ -126,7 +153,7 @@ contract Crowdsale is Context, ReentrancyGuard {
 
         _updatePurchasingState(beneficiary, weiAmount);
 
-        _forwardFunds();
+        _forwardFunds(amount);
         _postValidatePurchase(beneficiary, weiAmount);
     }
 
@@ -199,10 +226,17 @@ contract Crowdsale is Context, ReentrancyGuard {
         return weiAmount.mul(_rate);
     }
 
+    // /**
+    //  * @dev Determines how ETH is stored/forwarded on purchases.
+    //  */
+    // function _forwardFunds() internal {
+    //     _wallet.transfer(msg.value);
+    // }
+
     /**
      * @dev Determines how ETH is stored/forwarded on purchases.
      */
-    function _forwardFunds() internal {
-        _wallet.transfer(msg.value);
+    function _forwardFunds(uint256 amount) internal {
+        usdt.transferFrom(_msgSender(), _wallet, amount);
     }
 }
