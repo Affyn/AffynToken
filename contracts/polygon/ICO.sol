@@ -61,41 +61,28 @@ contract TSTokenPrivateSale is
     uint256 private _lockedAfterFirstWithdraw;
     
 
-    // constructor(
-    //     AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime, 
-    //     address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
-    
-    AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
-    uint256 __totalSaleCap = 2000000000000000000000000;
-    uint256 __individualPurchaseCap = 50000000000000000000000;
-    uint256 __openingTime  = now;
-    uint256 __closingTime  = __openingTime + 1 hours;
-    address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
-    uint256 __rate = 20;
-    uint256 __cliffDuration = 30 minutes;
-    uint256 __vestDuration = 2 hours;
-    uint256 __startCliffAfterFirstWithdrawTime = 10 minutes;
-
-    constructor()    
+    constructor(
+        AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime,
+        address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
 
         public
         WhitelistCrowdsale()
         PausableCrowdsale()
-        CappedCrowdsale(__totalSaleCap)
-        TimedCrowdsale(__openingTime, __closingTime)
-        Crowdsale(__rate, walletAddress, tokenAddress)
+        CappedCrowdsale(totalSaleCap)
+        TimedCrowdsale(openingTime, closingTime)
+        Crowdsale(rate, walletAddress, tokenAddress)
     {
         tree[msg.sender] = User(msg.sender, msg.sender);
         _token = AffynToken(tokenAddress);
-        _totalCap = __totalSaleCap;
-        _individualDefaultCap = __individualPurchaseCap;
-        _openingTime = __openingTime;
-        _closingTime = __closingTime;
+        _totalCap = totalSaleCap;
+        _individualDefaultCap = individualPurchaseCap;
+        _openingTime = openingTime;
+        _closingTime = closingTime;
         _wallet = walletAddress;
-        _rate = __rate;
-        _cliffDuration = __cliffDuration;
-        _vestDuration = __vestDuration;
-        _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
+        _rate = rate;
+        _cliffDuration = cliffDuration;
+        _vestDuration = vestDuration;
+        _lockedAfterFirstWithdraw = startCliffAfterFirstWithdrawTime;
     }
     
      /**
@@ -364,8 +351,8 @@ contract TSTokenPrivateSale is
         require(tree[beneficiary].inviter == address(0), "Sender can't already exist in tree");
         require(referee != beneficiary, "Referee cannot be yourself");
         
-        buyTokens(beneficiary, amount);
         tree[beneficiary] = User(referee, beneficiary);        
+        buyTokens(beneficiary, amount);
     }
 
     // function usdtBuyTokensTest(address beneficiary, uint256 amount) public nonReentrant {
