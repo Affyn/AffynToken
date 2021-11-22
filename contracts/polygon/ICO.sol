@@ -39,43 +39,47 @@ contract TSTokenPrivateSale is
     mapping(address => uint256) private _balances;
     mapping(address => uint256) private _commisions;
     mapping(address => TokenVesting) private _vault;
-    mapping(address => __unstable__TokenVault) private _firstVault;
+    //mapping(address => __unstable__TokenVault) private _firstVault;
     mapping(address => User) public tree;
-    mapping(address => bool) private _firstWithdraw;
+    //mapping(address => bool) private _firstWithdraw;
     
     event SetNewCapValue(address indexed userAddress, uint256 newAmount);
     event WhitelistedListAdded(address[] indexed account);
+    event OwnershipChanged(address indexed prevOwner, address indexed newOwner);
 
     AffynToken _token; 
         
-    uint256 private _individualDefaultCap;
+    uint256 private _individualDefaultCap; //Cap for each user
     
     uint256 _openingTime;
-    uint256 _closingTime;
-    uint256 _totalCap; 
-    address payable _wallet;
+    uint256 _closingTime; 
+    uint256 _totalCap;  // Total cap to be sold
+    address payable _wallet; //Wallet to receive funds
     uint256 _rate;
     
-    uint256 private _cliffDuration;
-    uint256 private _vestDuration;
-    uint256 private _lockedAfterFirstWithdraw;
+    uint256 private _cliffDuration; //Duration of each cliff
+    uint256 private _vestDuration; //Total duration of vest
+    uint256 private _lockedAfterFirstWithdraw; //Locked for how many days after ICO ends before vesting period starts
     
+    uint256 private totalTokensAvailable;
+
+    AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
+
+    
+    uint256 __totalSaleCap = 2000000000000000000000000;
+    uint256 __individualPurchaseCap = 50000000000000000000000;
+    uint256 __openingTime  = now + 1 minutes;
+    uint256 __closingTime  = __openingTime + 20 minutes;
+    address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
+    uint256 __rate = 20;
+    uint256 __cliffDuration = 3 minutes;
+    uint256 __vestDuration = 6 minutes;
+    uint256 __startCliffAfterFirstWithdrawTime = 5 minutes;
 
     // constructor(
     //     AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime, 
     //     address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
     
-    AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
-    uint256 __totalSaleCap = 2000000000000000000000000;
-    uint256 __individualPurchaseCap = 50000000000000000000000;
-    uint256 __openingTime  = now;
-    uint256 __closingTime  = __openingTime + 1 hours;
-    address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
-    uint256 __rate = 20;
-    uint256 __cliffDuration = 30 minutes;
-    uint256 __vestDuration = 2 hours;
-    uint256 __startCliffAfterFirstWithdrawTime = 10 minutes;
-
     constructor()    
 
         public
@@ -85,7 +89,7 @@ contract TSTokenPrivateSale is
         TimedCrowdsale(__openingTime, __closingTime)
         Crowdsale(__rate, walletAddress, tokenAddress)
     {
-        tree[msg.sender] = User(msg.sender, msg.sender);
+        tree[_msgSender()] = User(_msgSender(), _msgSender());
         _token = AffynToken(tokenAddress);
         _totalCap = __totalSaleCap;
         _individualDefaultCap = __individualPurchaseCap;
@@ -96,6 +100,39 @@ contract TSTokenPrivateSale is
         _cliffDuration = __cliffDuration;
         _vestDuration = __vestDuration;
         _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
+        totalTokensAvailable = 0;
+    }
+
+    function DepositRequiredAffyn() public onlyOwner {
+        uint256 amount = _totalCap + (_totalCap / 10);
+        _token.transferFrom(_msgSender(), address(this), amount); //Transfer total cap + commision tokens
+        totalTokensAvailable = amount;
+    }
+
+    function getAffynLeftovers() public view returns (uint256) {
+        return totalTokensAvailable;
+    }
+
+    function WithdrawRemainingAffyn() public onlyOwner {
+        require(hasClosed(), "PostDeliveryCrowdsale: not closed");
+        _deliverTokens(address(_wallet), totalTokensAvailable);
+        totalTokensAvailable = 0;
+    }
+
+     /**
+     * @dev Change ownership.
+     * @param beneficiary new owner address
+     */
+    function TransferAllOwnership(address beneficiary) public onlyOwner {
+    CapperRole.addCapper(beneficiary);
+    super.addWhitelistAdmin(beneficiary);
+    Ownable.transferOwnership(beneficiary);
+    
+    emit OwnershipChanged(address(_msgSender()), address(beneficiary));
+        
+    CapperRole.renounceCapper();
+    super.renounceWhitelistAdmin();
+    Ownable.renounceOwnership();
     }
     
      /**
@@ -213,7 +250,7 @@ contract TSTokenPrivateSale is
      * @dev get referral of said address.
     */
     function getInviter() public view returns (address) {
-        return tree[msg.sender].inviter;
+        return tree[_msgSender()].inviter;
     }
     
     /**
@@ -256,23 +293,10 @@ contract TSTokenPrivateSale is
      */
     function withdrawTokens() public {
         require(hasClosed(), "PostDeliveryCrowdsale: not closed");
-        uint256 amount = _balances[msg.sender];
+        uint256 amount = _balances[_msgSender()];
         require(amount > 0, "PostDeliveryCrowdsale: beneficiary is not due any tokens");
-
-        if (_firstWithdraw[msg.sender] == false)
-        {
-            if (amount != _commisions[msg.sender]) //if beneficiary only earned from commisions and did not purchase token, ignore withdrawing from 10% wallet
-            {
-                uint256 firstWithdrawAmount = (amount - _commisions[msg.sender]) / 10;
-                //Withdraw from 10% wallet
-                _balances[msg.sender] -= firstWithdrawAmount;
-                _firstVault[msg.sender].transfer(token(), msg.sender, firstWithdrawAmount);
-                _firstWithdraw[msg.sender] = true;
-            }
-        }
-
-        _balances[msg.sender] -= _vault[msg.sender]._releasableAmount(token());
-        _vault[msg.sender].release(token());
+        _balances[_msgSender()] -= _vault[_msgSender()]._releasableAmount(token());
+        _vault[_msgSender()].release(token());
 
     }
     
@@ -343,15 +367,9 @@ contract TSTokenPrivateSale is
         {
             _vault[beneficiary] = new TokenVesting(beneficiary, _closingTime + _lockedAfterFirstWithdraw, _cliffDuration, _vestDuration, false);
         }
-        if (address(_firstVault[beneficiary]) == address(0))
-        {
-            _firstVault[beneficiary] = new __unstable__TokenVault();
-        }
         
-        _firstWithdraw[beneficiary] = false;
         _balances[beneficiary] = _balances[beneficiary].add(tokenAmount);
-        _deliverTokens(address(_vault[beneficiary]), tokenAmount - (tokenAmount / 10)); //Deliver 90% to cliff wallet
-        _deliverTokens(address(_firstVault[beneficiary]), (tokenAmount / 10)); //Deliver 10% to first withdraw wallet
+        _deliverTokens(address(_vault[beneficiary]), tokenAmount); //Deliver 100% to cliff wallet
         _processCommision(tokenAmount, beneficiary);
     }
     
@@ -364,31 +382,12 @@ contract TSTokenPrivateSale is
         require(tree[beneficiary].inviter == address(0), "Sender can't already exist in tree");
         require(referee != beneficiary, "Referee cannot be yourself");
         
+        tree[beneficiary] = User(referee, beneficiary);
         buyTokens(beneficiary, amount);
-        tree[beneficiary] = User(referee, beneficiary);        
     }
 
-    // function usdtBuyTokensTest(address beneficiary, uint256 amount) public nonReentrant {
-    //     uint256 weiAmount = amount;
-    //     _preValidatePurchase(beneficiary, weiAmount);
-
-    //     // calculate token amount to be created
-    //     uint256 tokens = _getTokenAmount(weiAmount);
-
-    //     // update state
-    //     _weiRaised = _weiRaised.add(weiAmount);
-
-    //     _processPurchase(beneficiary, tokens);
-    //     emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
-
-    //     _updatePurchasingState(beneficiary, weiAmount);
-
-    //     _forwardFundsUSDT(amount);
-    //     _postValidatePurchase(beneficiary, weiAmount);
-    // }
-
-    // function _forwardFundsUSDT(uint256 amount) internal {
-    //     // Transfer amount USDT tokens from msg.sender to contract
-    //     usdt.transferFrom(_msgSender(), _wallet, amount);
-    // }
+    function buyTokensNoRef(address beneficiary, uint256 amount) public {
+        buyTokens(beneficiary, amount);
+        totalTokensAvailable = totalTokensAvailable - super._getTokenAmount(amount);
+    }
 }
