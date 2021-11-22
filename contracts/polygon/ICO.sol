@@ -63,9 +63,8 @@ contract TSTokenPrivateSale is
     
     uint256 private totalTokensAvailable;
 
+    /*
     AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
-
-    
     uint256 __totalSaleCap = 2000000000000000000000000;
     uint256 __individualPurchaseCap = 50000000000000000000000;
     uint256 __openingTime  = now + 1 minutes;
@@ -75,32 +74,39 @@ contract TSTokenPrivateSale is
     uint256 __cliffDuration = 3 minutes;
     uint256 __vestDuration = 6 minutes;
     uint256 __startCliffAfterFirstWithdrawTime = 5 minutes;
+    constructor()   
+    */
 
-    // constructor(
-    //     AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime, 
-    //     address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
-    
-    constructor()    
+    constructor(
+        AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime,
+        address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
 
         public
         WhitelistCrowdsale()
         PausableCrowdsale()
-        CappedCrowdsale(__totalSaleCap)
-        TimedCrowdsale(__openingTime, __closingTime)
-        Crowdsale(__rate, walletAddress, tokenAddress)
+        CappedCrowdsale(totalSaleCap)
+        TimedCrowdsale(openingTime, closingTime)
+        Crowdsale(rate, walletAddress, tokenAddress)
     {
         tree[_msgSender()] = User(_msgSender(), _msgSender());
         _token = AffynToken(tokenAddress);
-        _totalCap = __totalSaleCap;
-        _individualDefaultCap = __individualPurchaseCap;
-        _openingTime = __openingTime;
-        _closingTime = __closingTime;
+        _totalCap = totalSaleCap;
+        _individualDefaultCap = individualPurchaseCap;
+        _openingTime = openingTime;
+        _closingTime = closingTime;
         _wallet = walletAddress;
+        _rate = rate;
+        _cliffDuration = cliffDuration;
+        _vestDuration = vestDuration;
+        _lockedAfterFirstWithdraw = startCliffAfterFirstWithdrawTime;
+
+        /*
         _rate = __rate;
         _cliffDuration = __cliffDuration;
         _vestDuration = __vestDuration;
         _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
         totalTokensAvailable = 0;
+        */
     }
 
     function DepositRequiredAffyn() public onlyOwner {
