@@ -2,12 +2,13 @@ pragma solidity ^0.5.0;
 
 import "../../math/SafeMath.sol";
 import "../Crowdsale.sol";
+import "../../access/roles/WhitelistedRole.sol";
 
 /**
  * @title TimedCrowdsale
  * @dev Crowdsale accepting contributions only within a time frame.
  */
-contract TimedCrowdsale is Crowdsale {
+contract TimedCrowdsale is PrebuyerRole, Crowdsale {
     using SafeMath for uint256;
 
     uint256 private _openingTime;
@@ -79,8 +80,16 @@ contract TimedCrowdsale is Crowdsale {
      * @param beneficiary Token purchaser
      * @param weiAmount Amount of wei contributed
      */
-    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal onlyWhileOpen view {
-        super._preValidatePurchase(beneficiary, weiAmount);
+    function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal view {
+        if (isPrebuyer(beneficiary))
+        {
+            super._preValidatePurchase(beneficiary, weiAmount);
+        }
+        else
+        {
+            require(isOpen(), "TimedCrowdsale: not open");
+            super._preValidatePurchase(beneficiary, weiAmount);
+        }
     }
 
     /**

@@ -49,3 +49,43 @@ contract WhitelistedRole is Context, WhitelistAdminRole {
         emit WhitelistedRemoved(account);
     }
 }
+
+contract PrebuyerRole is Context, WhitelistAdminRole {
+    using Roles for Roles.Role;
+
+    event PrebuyerAdded(address indexed account);
+    event PrebuyerRemoved(address indexed account);
+
+    Roles.Role private _Prebuyers;
+
+    modifier onlyPrebuyer() {
+        require(isPrebuyer(_msgSender()), "PrebuyerRole: caller does not have the Prebuyer role");
+        _;
+    }
+
+    function isPrebuyer(address account) public view returns (bool) {
+        return _Prebuyers.has(account);
+    }
+
+    function addPrebuyer(address account) public onlyWhitelistAdmin {
+        _addPrebuyer(account);
+    }
+
+    function removePrebuyer(address account) public onlyWhitelistAdmin {
+        _removePrebuyer(account);
+    }
+
+    function renouncePrebuyer() public {
+        _removePrebuyer(_msgSender());
+    }
+
+    function _addPrebuyer(address account) internal {
+        _Prebuyers.add(account);
+        emit PrebuyerAdded(account);
+    }
+
+    function _removePrebuyer(address account) internal {
+        _Prebuyers.remove(account);
+        emit PrebuyerRemoved(account);
+    }
+}

@@ -138,7 +138,7 @@ contract Crowdsale is Context, ReentrancyGuard {
      * another `nonReentrant` function.
      * @param beneficiary Recipient of the token purchase
      */
-    function buyTokens(address beneficiary, uint256 amount) public nonReentrant {
+    function buyTokens(address beneficiary, uint256 amount) internal nonReentrant {
         uint256 weiAmount = amount;
         _preValidatePurchase(beneficiary, weiAmount);
 

@@ -63,19 +63,19 @@ contract TSTokenPrivateSale is
     
     uint256 private totalTokensAvailable;
 
-    /*
-    AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
-    uint256 __totalSaleCap = 2000000000000000000000000;
-    uint256 __individualPurchaseCap = 50000000000000000000000;
-    uint256 __openingTime  = now + 1 minutes;
-    uint256 __closingTime  = __openingTime + 20 minutes;
-    address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
-    uint256 __rate = 20;
-    uint256 __cliffDuration = 3 minutes;
-    uint256 __vestDuration = 6 minutes;
-    uint256 __startCliffAfterFirstWithdrawTime = 5 minutes;
-    constructor()   
-    */
+    
+    // AffynToken tokenAddress = AffynToken(0xf0Bcb2467021b145E557Ff3fb638AB8e7872464E);
+    // uint256 __totalSaleCap = 2000000000000000000000000;
+    // uint256 __individualPurchaseCap = 50000000000000000000000;
+    // uint256 __openingTime  = now + 10 minutes;
+    // uint256 __closingTime  = __openingTime + 20 minutes;
+    // address payable walletAddress = address(0x51B29d03027c147413D43b3D24CDba588ec899a2);
+    // uint256 __rate = 20;
+    // uint256 __cliffDuration = 3 minutes;
+    // uint256 __vestDuration = 6 minutes;
+    // uint256 __startCliffAfterFirstWithdrawTime = 5 minutes;
+    // constructor()   
+    
 
     constructor(
         AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime,
@@ -87,26 +87,33 @@ contract TSTokenPrivateSale is
         CappedCrowdsale(totalSaleCap)
         TimedCrowdsale(openingTime, closingTime)
         Crowdsale(rate, walletAddress, tokenAddress)
+        // CappedCrowdsale(__totalSaleCap)
+        // TimedCrowdsale(__openingTime, __closingTime)
+        // Crowdsale(__rate, walletAddress, tokenAddress)
     {
         tree[_msgSender()] = User(_msgSender(), _msgSender());
         _token = AffynToken(tokenAddress);
-        _totalCap = totalSaleCap;
-        _individualDefaultCap = individualPurchaseCap;
+        _wallet = walletAddress;
+        totalTokensAvailable = 0;
+
         _openingTime = openingTime;
         _closingTime = closingTime;
-        _wallet = walletAddress;
+        _totalCap = totalSaleCap;
+        _individualDefaultCap = individualPurchaseCap;
         _rate = rate;
         _cliffDuration = cliffDuration;
         _vestDuration = vestDuration;
         _lockedAfterFirstWithdraw = startCliffAfterFirstWithdrawTime;
 
-        /*
-        _rate = __rate;
-        _cliffDuration = __cliffDuration;
-        _vestDuration = __vestDuration;
-        _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
-        totalTokensAvailable = 0;
-        */
+        // _openingTime = __openingTime;
+        // _closingTime = __closingTime;
+        // _totalCap = __totalSaleCap;
+        // _individualDefaultCap = __individualPurchaseCap;
+        // _rate = __rate;
+        // _cliffDuration = __cliffDuration;
+        // _vestDuration = __vestDuration;
+        // _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
+        
     }
 
     function DepositRequiredAffyn() public onlyOwner {
@@ -221,7 +228,7 @@ contract TSTokenPrivateSale is
      * @param weiAmount Amount of wei contributed
      */
     function _preValidatePurchase(address beneficiary, uint256 weiAmount) internal view {
-        require(isWhitelisted(beneficiary), "WhitelistCrowdsale: beneficiary doesn't have the Whitelisted role");
+        require(isPrebuyer(beneficiary) || isWhitelisted(beneficiary) , "WhitelistCrowdsale: beneficiary doesn't have the Whitelisted or Prebuyer role");
         super._preValidatePurchase(beneficiary, weiAmount);
         // solhint-disable-next-line max-line-length
         require(_contributions[beneficiary].add(weiAmount) <= getCap(beneficiary), "Contract: beneficiary's cap exceeded");
@@ -269,7 +276,18 @@ contract TSTokenPrivateSale is
         {
             addWhitelisted(accounts[account]);
         }
-        //emit WhitelistedListAdded(address[] accounts);
+    }
+
+        /**
+     * @dev Extended version of adding Prebuyer
+     * @param accounts the addresses you wish to whitelist
+    */
+    function addPrebuyerList(address[] calldata accounts) external onlyWhitelistAdmin
+    {
+        for (uint256 account = 0; account < accounts.length; account++) 
+        {
+            addPrebuyer(accounts[account]);
+        }
     }
     
     /**
@@ -390,6 +408,7 @@ contract TSTokenPrivateSale is
         
         tree[beneficiary] = User(referee, beneficiary);
         buyTokens(beneficiary, amount);
+        totalTokensAvailable = totalTokensAvailable - super._getTokenAmount(amount);
     }
 
     function buyTokensNoRef(address beneficiary, uint256 amount) public {
