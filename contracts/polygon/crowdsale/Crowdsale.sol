@@ -223,7 +223,8 @@ contract Crowdsale is Context, ReentrancyGuard {
      * @return Number of tokens that can be purchased with the specified _weiAmount
      */
     function _getTokenAmount(uint256 weiAmount) internal view returns (uint256) {
-        return weiAmount.mul(_rate);
+        uint256 convertTo = weiAmount.mul(100000000000); //Rates are 1 : 12.5, USDC only has 6 decimals.
+        return convertTo.mul(_rate);
     }
 
     // /**
