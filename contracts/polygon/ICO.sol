@@ -261,8 +261,8 @@ contract TSTokenPrivateSale is
     /**
      * @dev get referral of said address.
     */
-    function getInviter() public view returns (address) {
-        return tree[_msgSender()].inviter;
+    function getInviter(address beneficiary) public view returns (address) {
+        return tree[beneficiary].inviter;
     }
 
     /**
