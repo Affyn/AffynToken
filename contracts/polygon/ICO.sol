@@ -17,7 +17,7 @@ import "./TokenVesting.sol";
 
 import "./token/ERC20/IERC20.sol";
 
-contract TSTokenPrivateSale is
+contract AffynTokenPresale is
     Crowdsale,
     CappedCrowdsale,
     CapperRole,
@@ -39,9 +39,7 @@ contract TSTokenPrivateSale is
     mapping(address => uint256) private _balances;
     mapping(address => uint256) private _commisions;
     mapping(address => TokenVesting) private _vault;
-    //mapping(address => __unstable__TokenVault) private _firstVault;
     mapping(address => User) public tree;
-    //mapping(address => bool) private _firstWithdraw;
 
     event SetNewCapValue(address indexed userAddress, uint256 newAmount);
     event WhitelistedListAdded(address[] indexed account);
@@ -63,55 +61,41 @@ contract TSTokenPrivateSale is
 
     uint256 private totalTokensAvailable;
 
+    AffynToken tokenAddress = AffynToken(0x3B56a704C01D650147ADE2b8cEE594066b3F9421);
 
-    // AffynToken tokenAddress = AffynToken(0xF1612621Fa28F2c65fc9c6AF73973FC19d44696D);
-    // uint256 __totalSaleCap = 130000000000000000000000000;
-    // uint256 __individualPurchaseCap = 50000000000000000000000;
-    // uint256 __openingTime  = now + 30 minutes;
-    // uint256 __closingTime  = __openingTime + 30 minutes;
-    // address payable walletAddress = address(0x8B824a8e8096F67d3d48D5E7021aBdDC93d08CF6);
-    // uint256 __rate = 125;
-    // uint256 __cliffDuration = 1 minutes;
-    // uint256 __vestDuration = 30 minutes;
-    // uint256 __startCliffAfterFirstWithdrawTime = 10 minutes;
-    // constructor()
+    uint256 __totalSaleCap = 130000000000000000000000000;
+    uint256 __individualPurchaseCap = 50000000000000000000000;
 
-    constructor(
-        AffynToken tokenAddress, uint256 totalSaleCap, uint256 individualPurchaseCap, uint256 openingTime, uint256 closingTime,
-        address payable walletAddress, uint256 rate, uint256 cliffDuration, uint256 vestDuration, uint256 startCliffAfterFirstWithdrawTime)
+    uint256 __openingTime  = 1639832400;
+    uint256 __closingTime  = 1640955600;
 
+    address payable walletAddress = address(0x6aa59f02E87908E0dfE433D6759E1E13D2dD8666);
+
+    uint256 __rate = 125;
+    uint256 __cliffDuration = 1 minutes;
+    uint256 __vestDuration = 4320 hours;
+    uint256 __startCliffAfterFirstWithdrawTime = 936 hours;
+
+    constructor()
         public
         WhitelistCrowdsale()
         PausableCrowdsale()
-        CappedCrowdsale(totalSaleCap)
-        TimedCrowdsale(openingTime, closingTime)
-        Crowdsale(rate, walletAddress, tokenAddress)
-        // CappedCrowdsale(__totalSaleCap)
-        // TimedCrowdsale(__openingTime, __closingTime)
-        // Crowdsale(__rate, walletAddress, tokenAddress)
+        CappedCrowdsale(__totalSaleCap)
+        TimedCrowdsale(__openingTime, __closingTime)
+        Crowdsale(__rate, walletAddress, tokenAddress)
     {
         tree[_msgSender()] = User(_msgSender(), _msgSender());
         _token = AffynToken(tokenAddress);
         _wallet = walletAddress;
         totalTokensAvailable = 0;
-
-        _openingTime = openingTime;
-        _closingTime = closingTime;
-        _totalCap = totalSaleCap;
-        _individualDefaultCap = individualPurchaseCap;
-        _rate = rate;
-        _cliffDuration = cliffDuration;
-        _vestDuration = vestDuration;
-        _lockedAfterFirstWithdraw = startCliffAfterFirstWithdrawTime;
-
-        // _openingTime = __openingTime;
-        // _closingTime = __closingTime;
-        // _totalCap = __totalSaleCap;
-        // _individualDefaultCap = __individualPurchaseCap;
-        // _rate = __rate;
-        // _cliffDuration = __cliffDuration;
-        // _vestDuration = __vestDuration;
-        // _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
+        _openingTime = __openingTime;
+        _closingTime = __closingTime;
+        _totalCap = __totalSaleCap;
+        _individualDefaultCap = __individualPurchaseCap;
+        _rate = __rate;
+        _cliffDuration = __cliffDuration;
+        _vestDuration = __vestDuration;
+        _lockedAfterFirstWithdraw = __startCliffAfterFirstWithdrawTime;
 
     }
 
@@ -261,8 +245,8 @@ contract TSTokenPrivateSale is
     /**
      * @dev get referral of said address.
     */
-    function getInviter(address beneficiary) public view returns (address) {
-        return tree[beneficiary].inviter;
+    function getInviter() public view returns (address) {
+        return tree[_msgSender()].inviter;
     }
 
     /**

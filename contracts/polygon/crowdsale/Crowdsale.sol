@@ -24,14 +24,14 @@ contract Crowdsale is Context, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for AffynToken;
     //using SafeERC20 for IERC20;
-    
+
     // The token being sold
     AffynToken private _token;
 
     // Address where funds are collected
     address payable private _wallet;
 
-    IERC20 usdt = IERC20(0xbAD0F9677F2137eb4EDDc4309606526A000037c8);
+    IERC20 usdt = IERC20(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
 
     // How many token units a buyer gets per wei.
     // The rate is the conversion between wei and the smallest and indivisible token unit.
